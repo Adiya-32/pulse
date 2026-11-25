@@ -1,8 +1,8 @@
 // app.js — wires the simulator / camera to the processing pipeline and draws everything.
-import { FS, PulseProcessor, Resampler } from './dsp.js?v=3';
-import { WatchSim, LED } from './sim.js?v=3';
-import { CameraSource } from './camera.js?v=3';
-import { drawTrace, drawSpectrum } from './charts.js?v=3';
+import { FS, PulseProcessor, Resampler } from './dsp.js?v=4';
+import { WatchSim, LED } from './sim.js?v=4';
+import { CameraSource } from './camera.js?v=4';
+import { drawTrace, drawSpectrum } from './charts.js?v=4';
 
 const $ = (s) => document.querySelector(s);
 const WINDOW = 8 * FS;     // samples shown in the charts
@@ -299,11 +299,16 @@ updatePicture(null);
 updateSnr();
 
 // Load the 3D view. If WebGL or the library can't load, the flat picture stays.
-import('./scene3d.js?v=3').then(({ PulseScene }) => {
+import('./scene3d.js?v=4').then(({ PulseScene }) => {
   const root = $('#scene3d');
   $('#stage3d').hidden = false;
   try {
     scene3d = new PulseScene(root, {
+      onLost: () => {          // the phone took the graphics memory back: carry on in 2D
+        scene3d = null;
+        $('#stage3d').hidden = true; $('#simView').hidden = state.mode === 'cam';
+        $('#xsec').removeAttribute('hidden');
+      },
       onView: (v) => {
         clearTimeout(state.lightTimer);
         if (v === 'light') state.lightTimer = setTimeout(() => markDone('light'), 4000);

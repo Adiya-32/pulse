@@ -9,8 +9,8 @@ import { RoundedBoxGeometry } from 'https://cdn.jsdelivr.net/npm/three@0.160.0/e
 import {
   HALF_W, LEDS, SENSORS, EPI, DERMIS, FAT, ARTERIOLES, VEIN, VESSELS, CELL_R,
   arterioleCentre, radiusAt, Blood, layoutFor, startPhoton, step, tracePhoton, traceVisible,
-} from './photons.js?v=3';
-import { LED } from './sim.js?v=3';
+} from './photons.js?v=4';
+import { LED } from './sim.js?v=4';
 
 const R = 1.75;               // wrist radius
 const WX = 2.2;               // where the watch sits along the arm
@@ -70,8 +70,8 @@ function ringTexture() {
 const skinRGB = (m) => [243 + (74 - 243) * m, 205 + (44 - 205) * m, 178 + (30 - 178) * m];
 
 export class PulseScene {
-  constructor(root, { onView } = {}) {
-    this.root = root; this.onView = onView || (() => {});
+  constructor(root, { onView, onLost } = {}) {
+    this.root = root; this.onView = onView || (() => {}); this.onLost = onLost;
     this.view = 'outside';
     this.orbit = { yaw: 0, pitch: 0 }; this.last = performance.now();
     this.visible = true;
@@ -88,8 +88,12 @@ export class PulseScene {
     this.arrivals = []; this.sideFlash = [0, 0];
     this.sensorFlash = 0; this.screenKey = ''; this.prevPulse = 0;
 
-    const r = (this.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true }));
-    r.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+    // Phones have far less graphics memory: render at lower sharpness and use smaller textures.
+    this.lite = matchMedia('(pointer: coarse)').matches || Math.min(screen.width, screen.height) < 820;
+    const r = (this.renderer = new THREE.WebGLRenderer({ antialias: !this.lite, alpha: true, powerPreference: this.lite ? 'low-power' : 'default' }));
+    r.setPixelRatio(Math.min(window.devicePixelRatio || 1, this.lite ? 1.25 : 2));
+    // If the browser takes the graphics memory back, tell the page so it can fall back to 2D.
+    r.domElement.addEventListener('webglcontextlost', (e) => { e.preventDefault(); this.lost = true; this.onLost?.(); });
     r.localClippingEnabled = true;
     r.domElement.className = 'scene-canvas';
     root.prepend(r.domElement);
@@ -292,7 +296,7 @@ export class PulseScene {
   // The cut face for "Light in skin": a flat plane at z = 0, drawn from the same layers, vessels
   // and red blood cells the light simulation uses (photons.js): what you see is what light meets.
   buildCut() {
-    this.cutW = 2048; this.cutH = Math.round(2048 * (2 * R) / (2 * HALF_W));
+    this.cutW = this.lite ? 1024 : 2048; this.cutH = Math.round(this.cutW * (2 * R) / (2 * HALF_W));
     this.cutCanvas = document.createElement('canvas'); this.cutCanvas.width = this.cutW; this.cutCanvas.height = this.cutH;
     this.cutTex = new THREE.CanvasTexture(this.cutCanvas); this.cutTex.colorSpace = THREE.SRGBColorSpace; this.cutTex.anisotropy = 8;
     this.cutFace = new THREE.Mesh(new THREE.PlaneGeometry(2 * HALF_W, 2 * R), new THREE.MeshBasicMaterial({ map: this.cutTex }));
@@ -488,6 +492,7 @@ export class PulseScene {
 
   // ------------------------------------------------------------------ per frame
   update(now, s, params, readout) {
+    if (this.lost) return;
     const real = Math.max(0, (now - this.last) / 1000); this.last = now;
     const dt = Math.min(0.1, real);       // for motion and simulation steps
     const de = Math.min(0.5, real);       // for camera and cut-away easing: keeps up even at low frame rates
