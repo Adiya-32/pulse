@@ -1,0 +1,203 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pulse in the Light</title>
+<meta name="description" content="Your smartwatch measures your heart rate with a green light. See how — and why it gets confused when you run — with a live simulation or your own fingertip on your phone camera.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpath d='M16 28S3 20 3 11a6.5 6.5 0 0 1 13-1 6.5 6.5 0 0 1 13 1c0 9-13 17-13 17z' fill='%23e5484d'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="css/style.css">
+<script type="importmap">
+{ "imports": {
+  "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+} }
+</script>
+</head>
+<body>
+<header class="hero">
+  <p class="eyebrow">Unveiling technology · the heart-rate sensor in a smartwatch</p>
+  <h1>Your watch takes your pulse <span class="glow">with light</span>.</h1>
+  <p class="lede">A green LED on the back of the watch shines into your wrist. With every heartbeat a little more blood squeezes into the vessels under the skin, and blood <b>swallows green light</b>. A sensor next to the LED sees the light dim and recover about once a second, and the watch counts the dips.</p>
+  <div class="modes" role="tablist">
+    <button class="mode active" data-mode="sim" role="tab" aria-selected="true">⌚ Simulated watch</button>
+    <button class="mode" data-mode="cam" role="tab" aria-selected="false">📷 Use my fingertip + camera</button>
+  </div>
+</header>
+
+<main>
+  <section class="stage3d" id="stage3d" hidden>
+   <div class="stage-row">
+    <div id="scene3d" class="scene3d">
+      <div class="scene-tag"><i></i><span>Live · outside</span></div>
+      <div class="scene-labels"></div>
+      <div class="beat-cue">♥ heartbeat: more blood</div>
+      <div class="scene-views">
+        <button data-view="outside">Outside</button><button data-view="sensors">Sensors</button><button data-view="inside">Inside</button><button data-view="light">Light in skin</button>
+      </div>
+    </div>
+    <div class="story-card">
+      <div class="story-title"></div>
+      <div class="story-rows"></div>
+      <div class="duo" hidden>
+        <div class="duo-row"><span>Blood under the watch</span><b data-word="blood">–</b><div class="duo-bar"><i data-bar="blood" class="b-blood"></i></div></div>
+        <div class="duo-row"><span>Light to the photodiodes</span><b data-word="light">–</b><div class="duo-bar"><i data-bar="light" class="b-light"></i></div></div>
+      </div>
+      <div class="graphs">
+        <div class="g"><div class="g-label"><i class="sw rbc"></i>Blood under the watch</div><canvas class="g-blood"></canvas></div>
+        <div class="g g-light-wrap"><div class="g-label"><i class="sw star"></i>Light at the photodiodes: the PPG signal (ticks = dots arriving)</div><canvas class="g-light"></canvas></div>
+      </div>
+      <div class="story-note"></div>
+    </div>
+   </div>
+    <p class="caption" id="sceneCaption"></p>
+  </section>
+  <section class="lab">
+    <!-- LEFT: the physical thing + controls -->
+    <div class="panel left">
+      <div id="simView">
+        <svg id="xsec" viewBox="0 0 340 210" role="img" aria-label="Cross-section of a watch on a wrist: an LED shines into the skin and blood vessels pulse with each heartbeat">
+          <defs>
+            <linearGradient id="dermis" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="var(--skin2)"/><stop offset="1" stop-color="var(--skin3)"/></linearGradient>
+          </defs>
+          <rect x="0" y="70" width="340" height="140" fill="url(#dermis)"/>
+          <rect id="epi" x="0" y="66" width="340" height="12" fill="var(--skin1)"/>
+          <text x="334" y="76" class="lbl" text-anchor="end">skin</text>
+          <text x="334" y="120" class="lbl" text-anchor="end">tiny arteries</text>
+          <text x="334" y="186" class="lbl" text-anchor="end">artery</text>
+          <g id="vessels"></g>
+          <ellipse id="artery" cx="170" cy="182" rx="70" ry="10" fill="var(--blood)"/>
+          <g id="ambientRays" opacity="0">
+            <path d="M8 8 L60 66" /><path d="M22 4 L76 66" /><path d="M332 8 L282 66" /><path d="M318 4 L266 66" />
+          </g>
+          <path id="lightPath" d="" fill="none" stroke-width="7" stroke-linecap="round" opacity=".55"/>
+          <g id="watch">
+            <rect x="60" y="28" width="220" height="34" rx="10" fill="var(--watch)"/>
+            <rect x="74" y="16" width="192" height="14" rx="6" fill="var(--watch2)"/>
+            <circle id="led" cx="140" cy="62" r="7"/>
+            <rect x="192" y="56" width="18" height="10" rx="2" fill="#1b1f2a" stroke="#6b7385"/>
+            <text x="140" y="49" class="lbl light" text-anchor="middle">LED</text>
+            <text x="201" y="49" class="lbl light" text-anchor="middle">sensor</text>
+            <rect x="226" y="36" width="40" height="7" rx="3" fill="#0e1118"/>
+            <rect id="sensorBar" x="226" y="36" width="20" height="7" rx="3" fill="#9aa4b8"/>
+          </g>
+        </svg>
+        <p class="caption">Light from the LED dives into the skin and bounces back to the sensor. When the vessels swell with a beat, they soak up more of it.</p>
+      </div>
+
+      <div id="camView" hidden>
+        <div class="cam-row">
+          <div class="cam-preview"><video id="video" playsinline muted></video><div id="camDot"></div></div>
+          <div>
+            <p id="camStatus" class="cam-status">Press start, then cover the camera lens completely with a fingertip. Hold still and press gently.</p>
+            <div class="cam-buttons">
+              <button id="camStart" class="btn primary">Start camera</button>
+              <button id="camTorch" class="btn" hidden>Torch: on</button>
+            </div>
+          </div>
+        </div>
+        <ol class="cam-tips">
+          <li><b>Phone:</b> cover the <i>back</i> camera; the torch turns on by itself where the browser allows it (not on iPhone, so sit near a lamp).</li>
+          <li><b>Laptop:</b> cover the webcam and hold a bright lamp or phone torch just behind your fingertip.</li>
+          <li>Then <b>wiggle your finger</b> or press harder and watch the reading go wrong: that's exactly what happens to a watch on a moving wrist.</li>
+        </ol>
+        <p class="fine">Video never leaves your device: each frame is shrunk to 40×30 pixels and averaged into one number in your browser.</p>
+      </div>
+
+      <div class="readout">
+        <div class="big">
+          <span class="label">Watch reads</span>
+          <span id="bpm" class="num">--</span><span class="unit">BPM</span>
+          <span id="beatHeart" class="heart" aria-hidden="true">♥</span>
+        </div>
+        <div class="truth" id="truthBox">
+          <span class="label">True pulse</span>
+          <span id="truth" class="num small">--</span><span class="unit">BPM</span>
+          <span id="err" class="err"></span>
+        </div>
+      </div>
+      <p id="verdict" class="verdict">Finding the rhythm…</p>
+
+      <div id="simControls" class="controls">
+        <label class="ctl"><span>Heart rate <b id="v-bpm">72</b> BPM</span><input type="range" id="c-bpm" min="40" max="190" value="72"></label>
+        <label class="ctl"><span>Arm movement <b id="v-motion">none</b></span><input type="range" id="c-motion" min="0" max="100" value="0"></label>
+        <label class="ctl"><span>Movement rhythm <b id="v-cadence">150</b> steps/min</span><input type="range" id="c-cadence" min="60" max="190" value="150"></label>
+        <label class="ctl"><span>Strap fit <b id="v-fit">snug</b></span><input type="range" id="c-fit" min="0" max="100" value="90"></label>
+        <div class="ctl"><span>LED colour</span>
+          <div class="seg" id="ledSeg">
+            <button data-led="green" class="on">Green</button><button data-led="red">Red</button><button data-led="ir">Infrared</button>
+          </div>
+        </div>
+        <label class="ctl"><span>Skin tone <b id="v-melanin">light</b></span><input type="range" id="c-melanin" min="0" max="100" value="30"></label>
+        <label class="toggle"><input type="checkbox" id="c-cancel"><span>Use the accelerometer to cancel movement</span></label>
+      </div>
+    </div>
+
+    <!-- RIGHT: the processing chain -->
+    <div class="panel right">
+      <div class="stage">
+        <div class="stage-head"><span class="n">1</span><h2>What the sensor sees</h2><span class="hint" id="rawHint">light absorbed, last 8 s</span></div>
+        <canvas id="cRaw" class="chart"></canvas>
+      </div>
+      <div class="stage">
+        <div class="stage-head"><span class="n">2</span><h2>Keep only heartbeat-speed wiggles, then count peaks</h2></div>
+        <canvas id="cClean" class="chart"></canvas>
+        <p class="legend"><span class="dot"></span> beat the watch counted <span class="sim-only"><span class="tick"></span> real heartbeat</span> <span class="dash"></span> threshold</p>
+      </div>
+      <div class="stage">
+        <div class="stage-head"><span class="n">3</span><h2>Double-check: which rhythm is strongest?</h2></div>
+        <canvas id="cSpec" class="chart short"></canvas>
+        <p class="legend"><span class="sw acc"></span> rhythms in the light (beats per minute) <span class="sw mot"></span> rhythms in the arm's motion</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="panel tryit" id="tryit">
+    <h2>Try this <span class="muted">(about two minutes)</span></h2>
+    <ol id="steps">
+      <li data-step="watch"><b>Watch the circles.</b> Each one is a beat the watch counted; the red marks underneath are the real heartbeats.</li>
+      <li data-step="light"><b>Press “Light in skin”.</b> Watch green light get swallowed by blood. When there’s more blood, less light gets back to the sensor: that dip is your heartbeat.</li>
+      <li data-step="move"><b>Drag “Arm movement” past halfway</b> as if you were running. The reading drifts away from your real pulse.</li>
+      <li data-step="lock"><b>Set the movement rhythm to 120 steps/min.</b> The watch now counts your <i>steps</i> as heartbeats.</li>
+      <li data-step="cancel"><b>Tick “Use the accelerometer”.</b> The watch learns what your arm's motion looks like and subtracts it. Your heart comes back.</li>
+      <li data-step="red"><b>Switch the LED to red</b> with some movement on. Now you know why watches glow green.</li>
+      <li data-step="cam"><b>Try your own pulse</b> with the camera button at the top.</li>
+    </ol>
+    <p class="insight" id="insight">The watch never feels your pulse. It watches your skin change colour, and a swinging arm changes the colour too.</p>
+  </section>
+
+  <section class="deep">
+    <article class="panel">
+      <h2>Why green?</h2>
+      <p>Blood's haemoglobin absorbs green light about 125 times more strongly than red, and about 33 times more than infrared. Green also stops in the top millimetre of skin, which is packed with tiny arteries and far from the tendons and veins that slosh when you move. So the heartbeat is a bigger share of the signal and movement is a smaller one. Here is the signal-to-noise for each colour with the settings above:</p>
+      <div id="snr" class="snr"></div>
+      <p class="fine"><b>Is it safe?</b> Yes: the LEDs are ordinary visible light at a few milliwatts, flashed briefly. No UV, no noticeable heat.</p>
+      <p class="fine">Turn up <b>skin tone</b>: melanin also absorbs green strongly, so less light comes back and sensor noise matters more. Real watches compensate by driving the LED harder, which costs battery. This is a known fairness problem for optical sensors. A phone camera uses <b>red</b> because the light must travel <i>through</i> your whole fingertip, and only red gets that far.</p>
+    </article>
+    <article class="panel">
+      <h2>How the watch tells a beat from noise</h2>
+      <ol class="pipeline">
+        <li><b>Linearise.</b> Light falls off exponentially with the amount of blood (the Beer–Lambert law), so the code takes −log(light). Now a 1% dip means 1% more absorption whatever the brightness: that's the <span id="pi">–</span> perfusion index.</li>
+        <li><b>Band-pass filter</b> 0.5–3.5 Hz (30–210 BPM). Slower changes (breathing, pressing harder) and faster ones (sensor hiss) can't be a heartbeat, so two cascaded filters remove them.</li>
+        <li><b>Peak picking.</b> A point counts as a beat if it is the highest within ±0.25 s, rises above half the biggest recent swing, and comes after a short refractory gap, so each beat's smaller echo wave is not counted twice.</li>
+        <li><b>Spectrum check.</b> A Fourier transform of the last 8 s finds the strongest rhythm. If counting and spectrum disagree, the reading is unreliable.</li>
+        <li><b>Motion cancelling.</b> An adaptive filter (normalised LMS, 24 taps) predicts the light wiggle from the accelerometer, sample by sample, and subtracts it. It can't help when your steps exactly match your heartbeat: then motion and pulse look identical.</li>
+      </ol>
+    </article>
+    <article class="panel">
+      <h2>What this simulation leaves out</h2>
+      <ul>
+        <li>The wrist model uses order-of-magnitude constants, not measured tissue optics; real absorption depends on wavelength in a more complicated way.</li>
+        <li>Real watches use several LEDs and photodiodes, change LED brightness automatically, and run trained models on top of filtering like this.</li>
+        <li>Sampling at 30 Hz limits timing to about ±17 ms per beat; above ~180 BPM the beat count starts to drift low.</li>
+        <li>Blood-oxygen (SpO₂) uses the same sensor with red <i>and</i> infrared together. That's a different calculation, not shown here.</li>
+      </ul>
+    </article>
+  </section>
+</main>
+<footer>
+  <p>All signal processing (filters, peak detection, Fourier analysis, adaptive motion cancelling) and the wrist simulation run in this page's own JavaScript. No AI, no server, no data leaves your device.</p>
+</footer>
+<script type="module" src="js/app.js"></script>
+</body>
+</html>
