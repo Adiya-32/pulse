@@ -84,7 +84,7 @@ export function drawSpectrum(canvas, spec, refSpec, marks = []) {
     const m = fill ? max : Math.max(...s.power) || 1;
     ctx.beginPath();
     s.freqs.forEach((f, i) => { const x = X(f * 60), y = (h - 18) * (1 - (s.power[i] / m) * 0.92); i ? ctx.lineTo(x, y) : ctx.moveTo(x, y); });
-    if (fill) { ctx.lineTo(X(s.freqs.at(-1) * 60), h - 18); ctx.lineTo(X(s.freqs[0] * 60), h - 18); ctx.closePath(); ctx.fillStyle = color; ctx.globalAlpha = 0.25; ctx.fill(); ctx.globalAlpha = 1; }
+    if (fill) { ctx.lineTo(X(s.freqs[s.freqs.length - 1] * 60), h - 18); ctx.lineTo(X(s.freqs[0] * 60), h - 18); ctx.closePath(); ctx.fillStyle = color; ctx.globalAlpha = 0.25; ctx.fill(); ctx.globalAlpha = 1; }
     else { ctx.strokeStyle = color; ctx.lineWidth = 1.5; ctx.setLineDash([3, 3]); ctx.stroke(); ctx.setLineDash([]); }
   };
   if (refSpec) plot(refSpec, css('--motion'), false);

@@ -115,7 +115,7 @@ export class Layout {
     for (let i = 0; i < this.x.length; i++) {
       const gx = Math.floor((this.x[i] + HALF_W) / GRID), gd = Math.floor(this.d[i] / GRID);
       if (gx < 0 || gx >= GX || gd < 0 || gd >= GD) continue;
-      (this.grid[gd * GX + gx] ||= []).push(i);
+      const k = gd * GX + gx; if (!this.grid[k]) this.grid[k] = []; this.grid[k].push(i);
     }
   }
   // Length of the segment (x0,d0)→(x1,d1) that lies inside red blood cells, and the cell

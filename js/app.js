@@ -1,8 +1,8 @@
 // app.js — wires the simulator / camera to the processing pipeline and draws everything.
-import { FS, PulseProcessor, Resampler } from './dsp.js?v=2';
-import { WatchSim, LED } from './sim.js?v=2';
-import { CameraSource } from './camera.js?v=2';
-import { drawTrace, drawSpectrum } from './charts.js?v=2';
+import { FS, PulseProcessor, Resampler } from './dsp.js?v=3';
+import { WatchSim, LED } from './sim.js?v=3';
+import { CameraSource } from './camera.js?v=3';
+import { drawTrace, drawSpectrum } from './charts.js?v=3';
 
 const $ = (s) => document.querySelector(s);
 const WINDOW = 8 * FS;     // samples shown in the charts
@@ -149,10 +149,23 @@ function stepSim(now) {
   while (state.trueBeats.length && state.trueBeats[0] < proc.n - WINDOW) state.trueBeats.shift();
 }
 
+// One bad frame must never stop the whole page: each part is guarded, and the next frame is
+// always scheduled. If the 3D view keeps failing it is switched off and the flat picture shown.
 function frame(now) {
+  try { frameBody(now); } catch (err) { showError(err); }
+  requestAnimationFrame(frame);
+}
+let scene3dErrors = 0;
+function frameBody(now) {
   if (state.mode === 'sim') {
     stepSim(now); updatePicture(sim.last);
-    scene3d?.update(now, sim.last, sim.params, { bpm: state.shownBpm, beatAt: state.beatAt });
+    if (scene3d) {
+      try { scene3d.update(now, sim.last, sim.params, { bpm: state.shownBpm, beatAt: state.beatAt }); }
+      catch (err) {
+        if (++scene3dErrors > 5) { scene3d = null; $('#stage3d').hidden = true; $('#simView').hidden = false; }
+        showError(err);
+      }
+    }
   }
   const len = Math.min(proc.raw.length, WINDOW);
   const start = proc.n - len;
@@ -167,14 +180,29 @@ function frame(now) {
     line: proc.thr.slice(-len), message: 'waiting for signal',
   });
   // pulse the heart icon when a new beat is detected
-  const lp = proc.peaks.at(-1) ?? -1;
+  const lp = proc.peaks.length ? proc.peaks[proc.peaks.length - 1] : -1;
   if (lp !== state.lastPeakSeen) {
     state.lastPeakSeen = lp;
     if (lp >= 0) { state.beatAt = now; const h = $('#beatHeart'); h.classList.add('pop'); setTimeout(() => h.classList.remove('pop'), 130); }
   }
   if (now - state.lastAnalyze > 250) { state.lastAnalyze = now; analyze(); }
-  requestAnimationFrame(frame);
 }
+
+// If something breaks, say so on the page (with the browser's name), so it can be reported
+// from a phone where there is no developer console.
+let errorShown = false;
+function showError(err) {
+  console.error(err);
+  if (errorShown) return;
+  errorShown = true;
+  const b = document.createElement('div');
+  b.className = 'error-banner';
+  b.textContent = `Something went wrong in this browser: ${err && err.message ? err.message : err}  ·  ${navigator.userAgent}`;
+  b.addEventListener('click', () => b.remove());
+  document.body.appendChild(b);
+}
+window.addEventListener('error', (e) => showError(e.error || e.message));
+window.addEventListener('unhandledrejection', (e) => showError(e.reason));
 
 // ---------------------------------------------------------------- numbers, verdicts, steps
 const fmt = (v) => (Number.isFinite(v) ? Math.round(v) : '--');
@@ -271,7 +299,7 @@ updatePicture(null);
 updateSnr();
 
 // Load the 3D view. If WebGL or the library can't load, the flat picture stays.
-import('./scene3d.js?v=2').then(({ PulseScene }) => {
+import('./scene3d.js?v=3').then(({ PulseScene }) => {
   const root = $('#scene3d');
   $('#stage3d').hidden = false;
   try {
@@ -283,7 +311,7 @@ import('./scene3d.js?v=2').then(({ PulseScene }) => {
     });
     $('#simView').hidden = true;
   } catch (err) {
-    $('#stage3d').hidden = true; console.warn('3D view unavailable:', err);
+    $('#stage3d').hidden = true; $('#simView').hidden = false; showError(err);
   }
-}).catch((err) => console.warn('3D view unavailable:', err));
+}).catch((err) => { console.warn('3D view unavailable:', err); showError(err); });
 requestAnimationFrame(frame);

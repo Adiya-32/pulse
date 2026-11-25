@@ -179,3 +179,6 @@ footer { color: var(--muted); font-size: 13px; padding-top: 18px; padding-bottom
 .tag3d.below span { top: 40px; }
 .tag3d.below i::after { bottom: auto; top: 6px; }
 @media (max-width: 600px) { .scene-views button { padding: 7px 8px; font-size: 12px; } }
+
+.error-banner { position: fixed; left: 8px; right: 8px; bottom: 8px; z-index: 50; padding: 10px 12px; border-radius: 10px;
+  background: #7f1d1d; color: #fff; font: 12px/1.4 ui-monospace, Menlo, monospace; word-break: break-word; cursor: pointer; }

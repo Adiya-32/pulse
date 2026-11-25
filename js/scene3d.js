@@ -2,13 +2,15 @@
 // Three.js (an open-source WebGL library) only draws; every number that moves the picture
 // comes from sim.js (heartbeat, arm motion, strap fit, skin tone, LED colour) and from the
 // light simulation in photons.js.
-import * as THREE from 'three';
-import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
+// jsDelivr's "+esm" builds: the addon imports three from the same URL, so there is one copy,
+// and no import map is needed (older iPhones don't support import maps).
+import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/+esm';
+import { RoundedBoxGeometry } from 'https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/geometries/RoundedBoxGeometry.js/+esm';
 import {
   HALF_W, LEDS, SENSORS, EPI, DERMIS, FAT, ARTERIOLES, VEIN, VESSELS, CELL_R,
   arterioleCentre, radiusAt, Blood, layoutFor, startPhoton, step, tracePhoton, traceVisible,
-} from './photons.js?v=2';
-import { LED } from './sim.js?v=2';
+} from './photons.js?v=3';
+import { LED } from './sim.js?v=3';
 
 const R = 1.75;               // wrist radius
 const WX = 2.2;               // where the watch sits along the arm
@@ -212,7 +214,11 @@ export class PulseScene {
     const c = this.capCanvas.getContext('2d'), W = 900, H = 275, S = 500;   // 500 px per scene unit
     const X = (x) => (x + 0.9) * S;
     c.clearRect(0, 0, W, H);
-    const rr = (x, y, w, h, r) => { c.beginPath(); c.roundRect(x, y, w, h, r); };
+    const rr = (x, y, w, h, r) => {          // rounded rectangle (ctx.roundRect is missing on older phones)
+      r = Math.min(r, w / 2, h / 2);
+      c.beginPath(); c.moveTo(x + r, y); c.arcTo(x + w, y, x + w, y + h, r); c.arcTo(x + w, y + h, x, y + h, r);
+      c.arcTo(x, y + h, x, y, r); c.arcTo(x, y, x + w, y, r); c.closePath();
+    };
     // case
     rr(0, 0, W, H, 100);
     const g = c.createLinearGradient(0, 0, 0, H);
