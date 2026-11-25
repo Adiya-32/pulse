@@ -166,9 +166,13 @@ export class PulseScene {
     const dark = new THREE.MeshStandardMaterial({ color: 0x1b1f2c, roughness: 0.35, metalness: 0.4, side: THREE.DoubleSide, ...this.clipOpts });
     const box = new THREE.Mesh(new RoundedBoxGeometry(1.8, 0.55, 2.3, 3, 0.2), dark);
     box.position.y = WATCH_Y; w.add(box);
-    // a lid over the cut face of the watch in the "Light in skin" view
-    this.watchCap = new THREE.Mesh(new THREE.PlaneGeometry(1.8, 0.55), new THREE.MeshStandardMaterial({ color: 0x232838, roughness: 0.6 }));
+    // the cut face of the watch in the "Light in skin" view: rounded case, glass on top, and the
+    // sensor window underneath with its LEDs and photodiodes (drawn in drawWatchCap)
+    this.capCanvas = document.createElement('canvas'); this.capCanvas.width = 900; this.capCanvas.height = 275;
+    this.capTex = new THREE.CanvasTexture(this.capCanvas); this.capTex.colorSpace = THREE.SRGBColorSpace;
+    this.watchCap = new THREE.Mesh(new THREE.PlaneGeometry(1.8, 0.55), new THREE.MeshBasicMaterial({ map: this.capTex, transparent: true }));
     this.watchCap.position.set(0, WATCH_Y, 0.004); w.add(this.watchCap);
+    this.drawWatchCap('#21c46b');
     const crown = new THREE.Mesh(new THREE.CylinderGeometry(0.13, 0.13, 0.2, 8), new THREE.MeshStandardMaterial({ color: 0x7d8cc4, ...this.clipOpts }));
     crown.rotation.z = Math.PI / 2; crown.position.set(0.98, R + 0.33, -0.55); w.add(crown);
     this.screenCanvas = document.createElement('canvas'); this.screenCanvas.width = 256; this.screenCanvas.height = 332;
@@ -199,6 +203,42 @@ export class PulseScene {
     this.glowMat = new THREE.MeshBasicMaterial({ map: radialTexture([[0, 'rgba(255,255,255,1)'], [0.55, 'rgba(255,255,255,.7)'], [1, 'rgba(255,255,255,0)']]),
       color: 0x21c46b, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, ...this.clipOpts });
     this.glow = new THREE.Mesh(shell, this.glowMat); this.glow.position.x = WX; this.body.add(this.glow);
+  }
+
+  // A side view of the watch as if cut in half, matching the case size (1.8 × 0.55, corner 0.2)
+  // and the LED and photodiode positions the light simulation uses.
+  drawWatchCap(ledHex) {
+    this.capLed = ledHex;
+    const c = this.capCanvas.getContext('2d'), W = 900, H = 275, S = 500;   // 500 px per scene unit
+    const X = (x) => (x + 0.9) * S;
+    c.clearRect(0, 0, W, H);
+    const rr = (x, y, w, h, r) => { c.beginPath(); c.roundRect(x, y, w, h, r); };
+    // case
+    rr(0, 0, W, H, 100);
+    const g = c.createLinearGradient(0, 0, 0, H);
+    g.addColorStop(0, '#323b55'); g.addColorStop(0.25, '#1b2030'); g.addColorStop(1, '#0c0f18');
+    c.fillStyle = g; c.fill();
+    c.lineWidth = 6; c.strokeStyle = 'rgba(160,175,220,.35)'; c.stroke();
+    // glass and screen on top
+    rr(40, 8, W - 80, 26, 13); c.fillStyle = '#4a5680'; c.fill();
+    rr(60, 12, W - 120, 7, 4); c.fillStyle = 'rgba(255,255,255,.45)'; c.fill();
+    rr(70, 36, W - 140, 14, 7); c.fillStyle = '#05070c'; c.fill();
+    // inside: a battery and a circuit board, faintly
+    rr(150, 70, W - 300, 70, 14); c.fillStyle = 'rgba(120,135,180,.12)'; c.fill();
+    rr(180, 160, W - 360, 30, 8); c.fillStyle = 'rgba(80,200,140,.08)'; c.fill();
+    // sensor window on the back
+    const bw = 0.78 * S;
+    rr(X(0) - bw, H - 30, 2 * bw, 30, 10); c.fillStyle = '#05070c'; c.fill();
+    // photodiodes
+    for (const x of SENSORS) {
+      rr(X(x) - 55, H - 26, 110, 22, 5); c.fillStyle = '#3a4566'; c.fill();
+      rr(X(x) - 40, H - 22, 80, 7, 3); c.fillStyle = 'rgba(190,205,255,.55)'; c.fill();
+    }
+    // LEDs, glowing
+    c.save(); c.shadowColor = ledHex; c.shadowBlur = 30;
+    for (const x of LEDS) { rr(X(x) - 32, H - 24, 64, 20, 5); c.fillStyle = ledHex; c.fill(); }
+    c.restore();
+    this.capTex.needsUpdate = true;
   }
 
   buildInside() {
@@ -499,6 +539,7 @@ export class PulseScene {
     this.glowMat.opacity = skinT * (1 - dip * pulse) * (1 - 0.5 * gap);
     this.ledLight.color.copy(ledColor); this.ledLight.intensity = this.view === 'sensors' ? 0 : 12 * skinT * (1 - dip * pulse);
     this.ledMat.color.copy(ledColor);
+    if (this.capLed !== led.color) this.drawWatchCap(led.color);
     for (const L of this.ledLabels) L.span.textContent = `${led.name} LED${L === this.labels[6] ? '' : 's'}`;
 
     const pop = Math.max(0, 1 - (now - (readout.beatAt || -1e9)) / 220);
