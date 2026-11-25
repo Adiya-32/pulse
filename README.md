@@ -69,6 +69,8 @@ The tests check the light simulation (red returns more light than green; a heart
 ### Deploy to GitHub Pages
 Push to a public repo → Settings → Pages → "Deploy from a branch" → `main` / root. The `.nojekyll` file makes Pages serve the files as they are.
 
+When you publish an update, raise the `?v=` number on the script and stylesheet links (in `index.html`, `js/app.js` and `js/scene3d.js`, all the same number), so browsers fetch the new files instead of cached ones.
+
 ## Limitations (honest list)
 - The idea and the order of the explanation follow a short explainer video the team used as a reference; all models, code and text here are our own.
 - The light-in-skin cut is not to scale; the tiny arteries widen far more than real ones (a few %) so it can be seen (green really reaches ~1 mm deep), and the green/red absorption ratio is compressed (real ≈ 100×, here 20×) so both colours show something.

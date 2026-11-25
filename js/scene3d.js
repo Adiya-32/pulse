@@ -7,8 +7,8 @@ import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.j
 import {
   HALF_W, LEDS, SENSORS, EPI, DERMIS, FAT, ARTERIOLES, VEIN, VESSELS, CELL_R,
   arterioleCentre, radiusAt, Blood, layoutFor, startPhoton, step, tracePhoton, traceVisible,
-} from './photons.js';
-import { LED } from './sim.js';
+} from './photons.js?v=2';
+import { LED } from './sim.js?v=2';
 
 const R = 1.75;               // wrist radius
 const WX = 2.2;               // where the watch sits along the arm
