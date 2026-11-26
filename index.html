@@ -6,7 +6,7 @@
 <title>Pulse in the Light</title>
 <meta name="description" content="Your smartwatch measures your heart rate with a green light. See how — and why it gets confused when you run — with a live simulation or your own fingertip on your phone camera.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpath d='M16 28S3 20 3 11a6.5 6.5 0 0 1 13-1 6.5 6.5 0 0 1 13 1c0 9-13 17-13 17z' fill='%23e5484d'/%3E%3C/svg%3E">
-<link rel="stylesheet" href="css/style.css?v=5">
+<link rel="stylesheet" href="css/style.css?v=6">
 </head>
 <body>
 <header class="hero">
@@ -147,51 +147,42 @@
   </section>
 
   <section class="panel tryit" id="tryit">
-    <h2>Try this <span class="muted">(about two minutes)</span></h2>
+    <h2>Try this</h2>
     <ol id="steps">
-      <li data-step="watch"><b>Watch the circles.</b> Each one is a beat the watch counted; the red marks underneath are the real heartbeats.</li>
-      <li data-step="light"><b>Press “Light in skin”.</b> Watch green light get swallowed by blood. When there’s more blood, less light gets back to the sensor: that dip is your heartbeat.</li>
-      <li data-step="move"><b>Drag “Arm movement” past halfway</b> as if you were running. The reading drifts away from your real pulse.</li>
-      <li data-step="lock"><b>Set the movement rhythm to 120 steps/min.</b> The watch now counts your <i>steps</i> as heartbeats.</li>
-      <li data-step="cancel"><b>Tick “Use the accelerometer”.</b> The watch learns what your arm's motion looks like and subtracts it. Your heart comes back.</li>
-      <li data-step="red"><b>Switch the LED to red</b> with some movement on. Now you know why watches glow green.</li>
-      <li data-step="cam"><b>Try your own pulse</b> with the camera button at the top.</li>
+      <li data-step="light"><b>Press “Light in skin”.</b> More blood → less light back. That dip is a heartbeat.</li>
+      <li data-step="lock"><b>Arm movement past halfway, rhythm 120 steps/min.</b> The watch counts your steps instead.</li>
+      <li data-step="cancel"><b>Tick “Use the accelerometer”.</b> Your real pulse comes back.</li>
+      <li data-step="red"><b>Switch the LED to red.</b> The beat almost disappears.</li>
     </ol>
-    <p class="insight" id="insight">The watch never feels your pulse. It watches your skin change colour, and a swinging arm changes the colour too.</p>
+    <p class="insight" id="insight">The watch doesn’t feel your pulse: it watches your skin change colour.</p>
   </section>
 
   <section class="deep">
     <article class="panel">
       <h2>Why green?</h2>
-      <p>Blood's haemoglobin absorbs green light about 125 times more strongly than red, and about 33 times more than infrared. Green also stops in the top millimetre of skin, which is packed with tiny arteries and far from the tendons and veins that slosh when you move. So the heartbeat is a bigger share of the signal and movement is a smaller one. Here is the signal-to-noise for each colour with the settings above:</p>
+      <p>Haemoglobin absorbs green about 125× more than red, and green stays in the top millimetre of skin, where the tiny arteries are. So the heartbeat stands out and arm movement matters less. Signal-to-noise with your settings:</p>
       <div id="snr" class="snr"></div>
-      <p class="fine"><b>Is it safe?</b> Yes: the LEDs are ordinary visible light at a few milliwatts, flashed briefly. No UV, no noticeable heat.</p>
-      <p class="fine">Turn up <b>skin tone</b>: melanin also absorbs green strongly, so less light comes back and sensor noise matters more. Real watches compensate by driving the LED harder, which costs battery. This is a known fairness problem for optical sensors. A phone camera uses <b>red</b> because the light must travel <i>through</i> your whole fingertip, and only red gets that far.</p>
+      <p class="fine">Darker skin absorbs green too, so less light comes back. The LEDs are low-power visible light: safe for skin.</p>
     </article>
     <article class="panel">
-      <h2>How the watch tells a beat from noise</h2>
+      <h2>How the watch finds beats</h2>
       <ol class="pipeline">
-        <li><b>Linearise.</b> Light falls off exponentially with the amount of blood (the Beer–Lambert law), so the code takes −log(light). Now a 1% dip means 1% more absorption whatever the brightness: that's the <span id="pi">–</span> perfusion index.</li>
-        <li><b>Band-pass filter</b> 0.5–3.5 Hz (30–210 BPM). Slower changes (breathing, pressing harder) and faster ones (sensor hiss) can't be a heartbeat, so two cascaded filters remove them.</li>
-        <li><b>Peak picking.</b> A point counts as a beat if it is the highest within ±0.25 s, rises above half the biggest recent swing, and comes after a short refractory gap, so each beat's smaller echo wave is not counted twice.</li>
-        <li><b>Spectrum check.</b> A Fourier transform of the last 8 s finds the strongest rhythm. If counting and spectrum disagree, the reading is unreliable.</li>
-        <li><b>Motion cancelling.</b> An adaptive filter (normalised LMS, 24 taps) predicts the light wiggle from the accelerometer, sample by sample, and subtracts it. It can't help when your steps exactly match your heartbeat: then motion and pulse look identical.</li>
+        <li><b>Filter:</b> keep only wiggles at heart speed (30–210 BPM).</li>
+        <li><b>Find peaks:</b> the top of each beat, never counted twice.</li>
+        <li><b>Double-check:</b> the strongest rhythm in the spectrum should agree.</li>
+        <li><b>Cancel motion:</b> subtract what the accelerometer predicts.</li>
       </ol>
     </article>
     <article class="panel">
-      <h2>What this simulation leaves out</h2>
+      <h2>What’s simplified</h2>
       <ul>
-        <li>The wrist model uses order-of-magnitude constants, not measured tissue optics; real absorption depends on wavelength in a more complicated way.</li>
-        <li>Real watches use several LEDs and photodiodes, change LED brightness automatically, and run trained models on top of filtering like this.</li>
-        <li>Sampling at 30 Hz limits timing to about ±17 ms per beat; above ~180 BPM the beat count starts to drift low.</li>
-        <li>Blood-oxygen (SpO₂) uses the same sensor with red <i>and</i> infrared together. That's a different calculation, not shown here.</li>
+        <li>Sizes and constants are exaggerated so you can see them.</li>
+        <li>Real watches use more LEDs and trained algorithms.</li>
+        <li>Blood oxygen (SpO₂) isn’t shown.</li>
       </ul>
     </article>
   </section>
 </main>
-<footer>
-  <p>All signal processing (filters, peak detection, Fourier analysis, adaptive motion cancelling) and the wrist simulation run in this page's own JavaScript. No AI, no server, no data leaves your device.</p>
-</footer>
-<script type="module" src="js/app.js?v=5"></script>
+<script type="module" src="js/app.js?v=6"></script>
 </body>
 </html>

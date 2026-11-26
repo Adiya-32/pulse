@@ -9,8 +9,8 @@ import { RoundedBoxGeometry } from 'https://cdn.jsdelivr.net/npm/three@0.160.0/e
 import {
   HALF_W, LEDS, SENSORS, EPI, DERMIS, FAT, ARTERIOLES, VEIN, VESSELS, CELL_R,
   arterioleCentre, radiusAt, Blood, layoutFor, startPhoton, step, tracePhoton, traceVisible,
-} from './photons.js?v=5';
-import { LED } from './sim.js?v=5';
+} from './photons.js?v=6';
+import { LED } from './sim.js?v=6';
 
 const R = 1.75;               // wrist radius
 const WX = 2.2;               // where the watch sits along the arm
@@ -38,7 +38,7 @@ const VIEWS = {
   inside: { pos: [WX - 0.4, 5.4, 6.2], look: [WX - 2.2, 0.2, 0], skin: 0.12, tag: 'Live · inside the wrist',
     caption: 'Inside the wrist. With every heartbeat a pulse wave (the bright ring) runs down the artery, the red blood cells surge forward, and the tiny arteries under the watch fill with extra blood. Veins (blue) carry blood back at a steady pressure: no pulse.' },
   light: { pos: [WX, R - 0.33, 2], look: [WX, R - 0.33, 0], skin: 1, cut: 0, tag: 'Live · light in the skin',
-    caption: 'A side cut through the skin under the watch (not to scale). The vessels are full of red blood cells, and it is the haemoglobin inside them that swallows light. Each green dot is light from an LED; follow one. If it passes through a red blood cell it is usually swallowed (the cell flashes). With every heartbeat the tiny arteries widen and fill with more cells, so more light is swallowed and less reaches the photodiodes. The vein holds cells too, but it doesn’t widen, so it adds no rhythm.' },
+    caption: 'A cut through the skin under the watch. Each dot is light: a red flash means haemoglobin in a blood cell swallowed it. Each heartbeat widens the tiny arteries, so less light gets back.' },
 };
 
 // Real absorption by oxygenated haemoglobin (molar extinction, cm⁻¹/M, Prahl's tables).
@@ -778,8 +778,8 @@ export class PulseScene {
       const mean = this.hist.light.length ? this.hist.light.reduce((a, b) => a + b, 0) / this.hist.light.length : 0;
       const ratio = Math.round(HBO2.green / HBO2.red);
       this.card.querySelector('.story-note').textContent = params.led === 'green'
-        ? `Blood more → light to the photodiodes less, and back again: each dip is one heartbeat. In a real wrist the change is only about 1–2%, invisible to your eye, but the watch measures it many times a second and counts the repeats. Haemoglobin absorbs green ${ratio}× more than red, so green shows the beat best.`
-        : `With ${LED[params.led].name.toLowerCase()} light, blood swallows little: more light comes back (${(mean * 100).toFixed(0)}% here), but the beat barely changes it. That’s why watches use green.`;
+        ? 'More blood → less light at the photodiodes. Each dip is one heartbeat.'
+        : `${LED[params.led].name} light is barely absorbed by blood, so the beat hardly shows. That’s why watches use green.`;
     }
   }
 

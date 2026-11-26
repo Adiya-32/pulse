@@ -1,8 +1,8 @@
 // app.js — wires the simulator / camera to the processing pipeline and draws everything.
-import { FS, PulseProcessor, Resampler } from './dsp.js?v=5';
-import { WatchSim, LED } from './sim.js?v=5';
-import { CameraSource } from './camera.js?v=5';
-import { drawTrace, drawSpectrum } from './charts.js?v=5';
+import { FS, PulseProcessor, Resampler } from './dsp.js?v=6';
+import { WatchSim, LED } from './sim.js?v=6';
+import { CameraSource } from './camera.js?v=6';
+import { drawTrace, drawSpectrum } from './charts.js?v=6';
 
 const $ = (s) => document.querySelector(s);
 const WINDOW = 8 * FS;     // samples shown in the charts
@@ -231,7 +231,7 @@ function analyze() {
     if (p.motion > 0.05) marks.push({ bpm: p.cadence, color: getComputedStyle(document.documentElement).getPropertyValue('--motion').trim(), label: 'steps', dash: true });
   }
   drawSpectrum($('#cSpec'), a.spec, isSim && p.motion > 0.05 ? a.refSpec : null, marks);
-  $('#pi').textContent = Number.isFinite(a.perfusion) ? `${a.perfusion.toFixed(1)}%` : '–';
+  const piEl = $('#pi'); if (piEl) piEl.textContent = Number.isFinite(a.perfusion) ? `${a.perfusion.toFixed(1)}%` : '–';
 
   let verdict, cls = '';
   const disagree = Number.isFinite(a.bpmPeaks) && Number.isFinite(a.bpmSpectrum) && Math.abs(a.bpmPeaks - a.bpmSpectrum) > 10;
@@ -261,13 +261,13 @@ function analyze() {
 }
 
 const INSIGHTS = {
-  light: 'Blood swallows green light. With every beat there is a little more blood under the watch, so a little less light gets back to the sensor. That dip is your pulse.',
-  watch: 'The watch never feels your pulse. It watches your skin change colour, and a swinging arm changes the colour too.',
-  move: 'Your swinging arm squeezes the tissue and shifts the strap. That changes the light by more than a heartbeat does.',
-  lock: 'Steps are a steady rhythm in the same range as heartbeats, so to a light sensor they look exactly like a pulse. Runners see this bug on real watches: their step rate shows up as their heart rate.',
-  cancel: 'The accelerometer feels only motion. An adaptive filter learns how that motion shows up in the light and subtracts it. What motion can’t explain is your heart.',
-  red: 'Red light goes deeper and blood absorbs less of it, so the heartbeat is a smaller share of the light that returns and motion a bigger one. On a wrist, green is the best trade-off.',
-  cam: 'Your camera just did what the watch does, using red light shining through your fingertip.',
+  light: 'More blood swallows more green light. That dip in the light is your pulse.',
+  watch: 'The watch doesn’t feel your pulse: it watches your skin change colour.',
+  move: 'A swinging arm changes the light more than a heartbeat does.',
+  lock: 'Steps are a steady rhythm too, so the watch mistakes them for heartbeats.',
+  cancel: 'The accelerometer feels only motion, so the watch can subtract it.',
+  red: 'Blood barely absorbs red, so the beat hardly shows. That’s why watches use green.',
+  cam: 'Your camera just did what the watch does, with red light through your finger.',
 };
 function markDone(step) {
   if (state.done.has(step)) return;
@@ -299,7 +299,7 @@ updatePicture(null);
 updateSnr();
 
 // Load the 3D view. If WebGL or the library can't load, the flat picture stays.
-import('./scene3d.js?v=5').then(({ PulseScene }) => {
+import('./scene3d.js?v=6').then(({ PulseScene }) => {
   const root = $('#scene3d');
   $('#stage3d').hidden = false;
   try {
