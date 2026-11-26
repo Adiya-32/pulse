@@ -66,10 +66,7 @@ node tests/pipeline.test.mjs
 
 The tests check the light simulation (red returns more light than green; a heartbeat dims green far more than red; darker skin returns less green light) and the pulse pipeline: resting heart rates 50–150 BPM read within ±4 BPM (several random seeds); the perfusion index is in a realistic 1–3% range; running at 120 steps/min fools the watch; accelerometer cancelling recovers the true pulse within ±5 BPM; red does worse than green under the same motion.
 
-### Deploy to GitHub Pages
-Push to a public repo → Settings → Pages → "Deploy from a branch" → `main` / root. The `.nojekyll` file makes Pages serve the files as they are.
-
-When you publish an update, raise the `?v=` number on the script and stylesheet links (in `index.html`, `js/app.js` and `js/scene3d.js`, all the same number), so browsers fetch the new files instead of cached ones.
+Live site (GitHub Pages): https://adiya-32.github.io/pulse/
 
 ## Limitations (honest list)
 - The idea and the order of the explanation follow a short explainer video the team used as a reference; all models, code and text here are our own.
