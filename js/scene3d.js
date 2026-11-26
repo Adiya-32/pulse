@@ -9,8 +9,8 @@ import { RoundedBoxGeometry } from 'https://cdn.jsdelivr.net/npm/three@0.160.0/e
 import {
   HALF_W, LEDS, SENSORS, EPI, DERMIS, FAT, ARTERIOLES, VEIN, VESSELS, CELL_R,
   arterioleCentre, radiusAt, Blood, layoutFor, startPhoton, step, tracePhoton, traceVisible,
-} from './photons.js?v=6';
-import { LED } from './sim.js?v=6';
+} from './photons.js?v=7';
+import { LED } from './sim.js?v=7';
 
 const R = 1.75;               // wrist radius
 const WX = 2.2;               // where the watch sits along the arm
@@ -453,8 +453,7 @@ export class PulseScene {
       note.textContent = 'The watch only sees the top layer. The extra blood there on each beat is the signal. Next: “Light in skin”.';
     } else {
       title.textContent = 'What happens to the light';
-      rows.innerHTML = FATES.map(([k, text, sw]) => row(sw, text, k)).join('')
-        + row('banana', 'Soft glow: the paths of light that reached a photodiode. They bend down into the vessels and back up: the “banana”');
+      rows.innerHTML = FATES.map(([k, text, sw]) => row(sw, text, k)).join('');
     }
   }
 

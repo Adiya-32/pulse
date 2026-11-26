@@ -1,8 +1,8 @@
 // app.js — wires the simulator / camera to the processing pipeline and draws everything.
-import { FS, PulseProcessor, Resampler } from './dsp.js?v=6';
-import { WatchSim, LED } from './sim.js?v=6';
-import { CameraSource } from './camera.js?v=6';
-import { drawTrace, drawSpectrum } from './charts.js?v=6';
+import { FS, PulseProcessor, Resampler } from './dsp.js?v=7';
+import { WatchSim, LED } from './sim.js?v=7';
+import { CameraSource } from './camera.js?v=7';
+import { drawTrace, drawSpectrum } from './charts.js?v=7';
 
 const $ = (s) => document.querySelector(s);
 const WINDOW = 8 * FS;     // samples shown in the charts
@@ -299,7 +299,7 @@ updatePicture(null);
 updateSnr();
 
 // Load the 3D view. If WebGL or the library can't load, the flat picture stays.
-import('./scene3d.js?v=6').then(({ PulseScene }) => {
+import('./scene3d.js?v=7').then(({ PulseScene }) => {
   const root = $('#scene3d');
   $('#stage3d').hidden = false;
   try {
