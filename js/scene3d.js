@@ -9,8 +9,8 @@ import { RoundedBoxGeometry } from 'https://cdn.jsdelivr.net/npm/three@0.160.0/e
 import {
   HALF_W, LEDS, SENSORS, EPI, DERMIS, FAT, ARTERIOLES, VEIN, VESSELS, CELL_R,
   arterioleCentre, radiusAt, Blood, layoutFor, startPhoton, step, tracePhoton, traceVisible,
-} from './photons.js?v=4';
-import { LED } from './sim.js?v=4';
+} from './photons.js?v=5';
+import { LED } from './sim.js?v=5';
 
 const R = 1.75;               // wrist radius
 const WX = 2.2;               // where the watch sits along the arm
